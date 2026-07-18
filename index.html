@@ -241,87 +241,81 @@
     .chart-canvas-box { height: 260px; }
   }
 
-  /* ═══ 휴대폰 가로(landscape) - 세로처럼 스크롤 (겹침 방지) ═══ */
+  /* ═══ 휴대폰 가로(landscape) - 노트북처럼 2×2 한 화면에 4파트 ═══ */
   @media (max-height: 600px) and (orientation: landscape) {
-    html { height: auto !important; overflow: visible !important; }
+    html, body { height: 100% !important; overflow: hidden !important; }
     body {
-      height: auto !important; min-height: 0 !important;
-      width: 100% !important; max-width: 100% !important;
-      overflow-x: hidden !important; overflow-y: auto !important;
-      -webkit-overflow-scrolling: touch;
-      padding: 8px 10px 32px !important; font-size: 12px !important;
+      height: 100vh !important; height: 100dvh !important;
+      width: 100vw !important; max-width: 100vw !important;
+      overflow: hidden !important;
+      padding: 5px 7px !important; font-size: 10.5px !important;
     }
-    .wrap {
-      height: auto !important; max-width: 100% !important;
-      display: flex !important; flex-direction: column !important;
-      gap: 12px !important;
-    }
+    .wrap { height: 100% !important; gap: 4px !important; }
 
     header { flex: 0 0 auto !important; }
-    header h1 { font-size: 13px !important; margin-bottom: 1px; }
-    header p { font-size: 10px !important; line-height: 1.3; }
+    header h1 { font-size: 11px !important; margin-bottom: 0 !important; line-height: 1.2; }
+    header p { display: none !important; }
 
     .slider-panel { flex: 0 0 auto !important; }
-    .slider-wrap { padding: 8px 14px !important; }
-    .slider-row { flex-wrap: wrap; }
-    .slider-hints { font-size: 9.5px !important; }
+    .slider-wrap { padding: 4px 12px !important; }
+    .slider-top-label { margin-bottom: 3px !important; font-size: 8.5px !important; }
+    .slider-row { margin-bottom: 2px !important; }
+    .slider-hints { font-size: 8px !important; }
 
-    /* 4파트를 위→아래 1열로 스택 */
+    /* ── 핵심: 4파트 2×2 그리드, 한 화면 ── */
     .main-grid {
-      display: flex !important;
-      flex-direction: column !important;
-      grid-template-columns: none !important;
-      grid-template-rows: none !important;
-      flex: 0 0 auto !important;
+      display: grid !important;
+      grid-template-columns: 0.82fr 1.18fr !important;
+      grid-template-rows: 1fr 1fr !important;
+      flex: 1 1 0 !important;
       min-height: 0 !important; height: auto !important;
-      gap: 18px !important;
+      gap: 5px !important;
+      align-items: stretch !important;
     }
+    /* 각 셀: flex 컬럼, 넘치면 셀 내부에서만 스크롤 → 겹침 방지 */
     .quad {
       display: flex !important; flex-direction: column !important;
-      flex: 0 0 auto !important; min-height: 0 !important; height: auto !important;
-      gap: 6px !important;
+      min-height: 0 !important; height: auto !important;
+      gap: 3px !important; overflow: hidden !important;
     }
-    .panel { flex: 0 0 auto !important; height: auto !important; min-height: 0 !important; }
+    .col-title { font-size: 9.5px !important; }
+    .col-title small { font-size: 7px !important; }
+    .mini-metrics { font-size: 7.5px !important; }
+    .panel { min-height: 0 !important; }
 
-    .col-title { font-size: 12.5px !important; flex-wrap: wrap; }
-    .col-title small { font-size: 9.5px !important; }
-    .mini-metrics { font-size: 10.5px !important; margin-left: 0 !important; }
-
-    /* 허블텐션: 게이지 위 / σ기준 아래 */
+    /* Part Ⅱ: 게이지 + σ기준 가로 유지 */
     .tension-body {
-      display: flex !important; flex-direction: column !important;
-      grid-template-columns: none !important;
-      flex: 0 0 auto !important; min-height: 0 !important; height: auto !important;
-      gap: 8px !important;
+      display: grid !important; grid-template-columns: 1fr 132px !important;
+      flex: 1 1 0 !important; min-height: 0 !important; gap: 4px !important;
     }
-    .tension-left { flex: 0 0 auto !important; min-height: 0 !important; }
-    .gauge-wrap {
-      height: 240px !important; width: 100% !important;
-      flex: 0 0 auto !important; min-height: 0 !important;
-    }
-    .criteria-col { flex: 0 0 auto !important; min-height: 0 !important; height: auto !important; }
-    .crit-panel { flex: 0 0 auto !important; height: auto !important; padding: 8px 10px !important; gap: 5px !important; }
-    .crit-line { font-size: 10px !important; }
-    .crit-line .cd { font-size: 9px !important; }
-    .crit-row { grid-template-columns: 1fr 1fr 1fr !important; }
+    .tension-left { min-height: 0 !important; overflow: hidden !important; }
+    .gauge-wrap { flex: 1 1 0 !important; min-height: 0 !important; height: auto !important; padding: 4px 6px !important; }
+    .criteria-col { min-height: 0 !important; overflow: hidden !important; }
+    .crit-panel { padding: 4px 6px !important; gap: 2px !important; }
+    .crit-line { font-size: 6.5px !important; line-height: 1.25 !important; }
+    .crit-line .cd { font-size: 6px !important; }
+    .crit-row { grid-template-columns: 1fr 1fr 1fr !important; gap: 2px 6px !important; }
+    .crit-item { font-size: 6.5px !important; }
+    .crit-desc { font-size: 6px !important; }
 
-    /* 그래프: 고정 높이로 겹침 방지 */
-    .chart-card { flex: 0 0 auto !important; height: auto !important; min-height: 0 !important; padding: 8px 10px !important; }
-    .chart-canvas-box { height: 200px !important; flex: 0 0 auto !important; min-height: 0 !important; }
-    .chart-title { font-size: 11px !important; }
-    .legend { font-size: 9.5px !important; gap: 7px !important; }
-    .axis-labels { font-size: 9px !important; }
+    /* 그래프 카드: 남는 높이를 캔버스가 차지 (fixed 아님, flex로) */
+    .chart-card { flex: 1 1 0 !important; min-height: 0 !important; height: auto !important; padding: 4px 6px !important; overflow: hidden !important; }
+    .chart-canvas-box { flex: 1 1 0 !important; min-height: 0 !important; height: auto !important; }
+    .chart-title { font-size: 8px !important; }
+    .legend { font-size: 6.5px !important; gap: 4px !important; }
+    .lbox { width: 10px !important; }
+    .axis-labels { font-size: 6.5px !important; margin-top: 1px !important; }
 
-    .h0-grid { grid-template-columns: repeat(5, 1fr) !important; gap: 5px !important; flex: 0 0 auto !important; }
-    .h0-name { font-size: 9.5px !important; }
-    .h0-val { font-size: 13px !important; }
-    .h0-err { font-size: 8px !important; }
+    .h0-grid { grid-template-columns: repeat(5, 1fr) !important; gap: 3px !important; flex: 0 0 auto !important; }
+    .h0-name { font-size: 7px !important; }
+    .h0-val { font-size: 10px !important; }
+    .h0-err { font-size: 6px !important; }
 
-    .candle-metrics { grid-template-columns: repeat(2,1fr) !important; gap: 6px !important; flex: 0 0 auto !important; }
-    .metric-label { font-size: 9.5px !important; }
-    .metric-val { font-size: 13px !important; }
+    .candle-metrics { grid-template-columns: repeat(4,1fr) !important; gap: 3px !important; flex: 0 0 auto !important; }
+    .metric-label { font-size: 6.5px !important; }
+    .metric-val { font-size: 9px !important; }
 
-    .state-banner { font-size: 10.5px !important; padding: 6px 10px !important; }
+    .state-banner { font-size: 7.5px !important; padding: 2px 7px !important; }
   }
 
   /* ═══ 휴대폰 세로(portrait) - 위→아래 스크롤 ═══ */
