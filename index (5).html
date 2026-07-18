@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ⅰa형 초신성의 나이 보정 효과에 따른 우주 가속/감속 팽창 모델 비교 시뮬레이터</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #111418;
+    --bg-card:   #1a1f26;
+    --border:    rgba(255,255,255,0.10);
+    --text:      rgba(255,255,255,0.88);
+    --text-dim:  rgba(255,255,255,0.45);
+    --text-hint: rgba(255,255,255,0.28);
+    --radius:    10px;
+    --font:      'Noto Sans KR', sans-serif;
+    --blue:      #378ADD;
+    --blue2:     #4e8ef7;
+    --green:     #2ec27e;
+    --orange:    #e5813a;
+    --red:       #d94f4f;
+    --lcdm:      #c8ccd8;
+  }
+
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    width: 100vw;
+    max-width: 100vw;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.45;
+    overflow: hidden;
+  }
+
+  .wrap {
+    width: 100%; max-width: 1720px; height: 100%;
+    margin: 0 auto;
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .mb { margin-bottom: 0; }
+
+  header { flex: 0 0 auto; }
+  header h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 2px; }
+  header h1 span { color: var(--blue); }
+  header p { font-size: 11.5px; color: var(--text-dim); line-height: 1.4; }
+
+  .panel { background: var(--bg-card); border: 0.5px solid var(--border); border-radius: var(--radius); }
+
+  /* ── 통합 k 슬라이더 ── */
+  .slider-panel { flex: 0 0 auto; }
+  .slider-wrap { padding: 9px 18px; }
+  .slider-top-label {
+    font-size: 10px; font-weight: 500; color: var(--text-hint);
+    letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 5px;
+  }
+  .slider-row { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .slider-name { font-size: 13px; font-weight: 500; color: var(--text-dim); white-space: nowrap; min-width: 52px; }
+  input[type=range] {
+    flex: 1; -webkit-appearance: none; appearance: none;
+    height: 4px; border-radius: 2px;
+    background: rgba(255,255,255,0.12); outline: none; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--blue); cursor: pointer;
+    box-shadow: 0 0 0 3px rgba(55,138,221,0.22); transition: box-shadow 0.2s;
+  }
+  input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(55,138,221,0.28); }
+  input[type=range]::-moz-range-thumb {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--blue); border: none; cursor: pointer;
+  }
+  .slider-k { font-size: 18px; font-weight: 700; color: var(--blue); min-width: 84px; text-align: right; }
+  .slider-hints { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-hint); padding: 0 2px; flex-wrap: wrap; gap: 4px; }
+
+  /* ── Ⅰ. 니켈-56 섹션 (전체 폭) ── */
+  .ni-grid {
+    display: grid;
+    grid-template-columns: 330px 1fr;
+    gap: 16px;
+    align-items: stretch;
+  }
+  .ni-left { display: flex; flex-direction: column; gap: 10px; }
+  .chain {
+    display: flex; align-items: center; justify-content: center;
+    gap: 10px; flex-wrap: wrap; padding: 14px 12px;
+  }
+  .iso {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    border: 0.5px solid var(--border); border-radius: 10px;
+    padding: 7px 12px; background: rgba(255,255,255,0.03); min-width: 78px;
+  }
+  .iso b { font-size: 15px; font-weight: 700; }
+  .iso span { font-size: 10px; color: var(--text-hint); }
+  .iso.ni b { color: #f5c542; } .iso.co b { color: #ff7b5c; } .iso.fe b { color: #7fa8ff; }
+  .iso.ni { box-shadow: 0 0 16px rgba(245,197,66,.12); }
+  .chain .arrow { color: var(--text-hint); font-size: 11px; text-align: center; line-height: 1.4; }
+  .ni-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1; }
+  .ni-metrics .metric { display: flex; flex-direction: column; justify-content: center; }
+
+  /* ── 2×2 파트 그리드 (상단 비대칭: Part Ⅰ 좁게, Part Ⅱ 넓게) ── */
+  .main-grid {
+    flex: 1 1 0;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 0.82fr 1.18fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 12px;
+    align-items: stretch;
+  }
+  /* Part Ⅱ 내부: 게이지 + σ 기준을 가로로 */
+  .tension-body {
+    flex: 1 1 0; min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 210px;
+    gap: 10px;
+  }
+  .tension-left { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .criteria-col {
+    min-width: 0; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .criteria-col .crit-title {
+    font-size: 9px; font-weight: 500; color: var(--text-hint);
+    letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 5px;
+  }
+  .crit-panel {
+    flex: 1 1 0; min-height: 0; overflow: hidden;
+    padding: 9px 11px;
+    display: flex; flex-direction: column; gap: 7px; justify-content: center;
+  }
+  .crit-line { font-size: 10px; line-height: 1.35; }
+  .crit-line .cs { font-weight: 700; }
+  .crit-line .cd { color: var(--text-dim); font-size: 9.5px; display: block; }
+  .quad {
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .col-title {
+    flex: 0 0 auto;
+    font-size: 12px; font-weight: 700; color: var(--text);
+    padding: 0 2px 1px;
+    display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px;
+  }
+  .col-title small { font-weight: 400; font-size: 10px; color: var(--text-hint); }
+  .mini-metrics {
+    margin-left: auto; font-size: 10.5px; color: var(--text-dim); font-weight: 400;
+  }
+  .mini-metrics b { font-family: monospace; font-size: 12px; font-weight: 700; }
+
+  .sec-label {
+    flex: 0 0 auto;
+    font-size: 9px; font-weight: 500; color: var(--text-hint);
+    letter-spacing: 0.07em; text-transform: uppercase;
+    margin-bottom: 4px; padding-left: 1px;
+  }
+
+  /* ── 좌측: 게이지 + σ 기준 + H₀ 카드 ── */
+  .gauge-wrap { padding: 8px 10px; flex: 1 1 0; min-height: 0; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; width: 100%; }
+
+  .criteria { padding: 8px 13px; flex: 0 0 auto; }
+  .crit-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px 14px; }
+  .crit-item { font-size: 10px; line-height: 1.35; }
+  .crit-sig  { font-weight: 700; display: block; margin-bottom: 0; }
+  .crit-desc { color: var(--text-dim); font-size: 9.5px; line-height: 1.3; }
+
+  .h0-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 6px; flex: 0 0 auto; }
+  .h0-card {
+    background: var(--bg-card); border: 0.5px solid var(--border);
+    border-radius: 8px; padding: 5px 6px;
+    border-top-width: 2.5px; border-top-style: solid;
+  }
+  .h0-name { font-size: 10px; font-weight: 500; color: var(--text-dim); margin-bottom: 2px; }
+  .h0-val  { font-size: 14px; font-weight: 700; }
+  .h0-err  { font-size: 9px; color: var(--text-hint); margin-top: 1px; line-height: 1.2; }
+
+  /* Part Ⅰ 절대등급 하단 지표 */
+  .candle-metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; flex: 0 0 auto; }
+
+  /* ── 지표 카드 + 배너 ── */
+  .metric {
+    background: var(--bg-card); border: 0.5px solid var(--border);
+    border-radius: 8px; padding: 5px 8px; text-align: center;
+  }
+  .metric-label { font-size: 9px; color: var(--text-hint); margin-bottom: 2px; }
+  .metric-val   { font-size: 14px; font-weight: 500; }
+
+  .state-banner {
+    flex: 0 0 auto;
+    text-align: center; padding: 5px 14px; border-radius: 8px;
+    font-size: 11px; font-weight: 500;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* 우측 두 그래프가 남은 높이를 반씩 나눠 가짐 */
+  .chart-card {
+    padding: 8px 14px 10px;
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .chart-title { font-size: 11px; font-weight: 500; margin-bottom: 4px; flex: 0 0 auto; }
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    font-size: 10px; color: var(--text-dim); margin-bottom: 4px; flex: 0 0 auto;
+  }
+  .legend span { display: flex; align-items: center; gap: 4px; }
+  .lbox { width: 14px; height: 2.5px; display: inline-block; border-radius: 2px; }
+  .chart-canvas-box { position: relative; flex: 1 1 0; min-height: 0; width: 100%; }
+  .axis-labels { display: flex; justify-content: space-between; font-size: 9.5px; color: var(--text-hint); margin-top: 2px; flex: 0 0 auto; }
+
+  /* 좁거나 낮은 화면에서는 세로 스택 + 스크롤 허용 */
+  /* ═══ 태블릿·좁은 데스크탑 (세로 스택) ═══ */
+  /* ═══ 태블릿/좁은 화면 세로 - 단일 열 스택 ═══ */
+  @media (max-width: 1080px) and (orientation: portrait) {
+    html, body { overflow: auto; height: auto; }
+    body { height: auto; padding: 10px 12px; }
+    .wrap { height: auto; }
+    .main-grid { grid-template-columns: 1fr; grid-template-rows: none; flex: 0 0 auto; }
+    .quad { min-height: 0; }
+    .tension-body { grid-template-columns: 1fr; }
+    .criteria-col { min-height: auto; }
+    .gauge-wrap { height: 340px; }
+    .chart-canvas-box { height: 260px; }
+  }
+
+  /* ═══ 휴대폰 가로(landscape) - 세로처럼 스크롤 (겹침 방지) ═══ */
+  @media (max-height: 600px) and (orientation: landscape) {
+    html { height: auto !important; overflow: visible !important; }
+    body {
+      height: auto !important; min-height: 0 !important;
+      width: 100% !important; max-width: 100% !important;
+      overflow-x: hidden !important; overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch;
+      padding: 8px 10px 32px !important; font-size: 12px !important;
+    }
+    .wrap {
+      height: auto !important; max-width: 100% !important;
+      display: flex !important; flex-direction: column !important;
+      gap: 12px !important;
+    }
+
+    header { flex: 0 0 auto !important; }
+    header h1 { font-size: 13px !important; margin-bottom: 1px; }
+    header p { font-size: 10px !important; line-height: 1.3; }
+
+    .slider-panel { flex: 0 0 auto !important; }
+    .slider-wrap { padding: 8px 14px !important; }
+    .slider-row { flex-wrap: wrap; }
+    .slider-hints { font-size: 9.5px !important; }
+
+    /* 4파트를 위→아래 1열로 스택 */
+    .main-grid {
+      display: flex !important;
+      flex-direction: column !important;
+      grid-template-columns: none !important;
+      grid-template-rows: none !important;
+      flex: 0 0 auto !important;
+      min-height: 0 !important; height: auto !important;
+      gap: 18px !important;
+    }
+    .quad {
+      display: flex !important; flex-direction: column !important;
+      flex: 0 0 auto !important; min-height: 0 !important; height: auto !important;
+      gap: 6px !important;
+    }
+    .panel { flex: 0 0 auto !important; height: auto !important; min-height: 0 !important; }
+
+    .col-title { font-size: 12.5px !important; flex-wrap: wrap; }
+    .col-title small { font-size: 9.5px !important; }
+    .mini-metrics { font-size: 10.5px !important; margin-left: 0 !important; }
+
+    /* 허블텐션: 게이지 위 / σ기준 아래 */
+    .tension-body {
+      display: flex !important; flex-direction: column !important;
+      grid-template-columns: none !important;
+      flex: 0 0 auto !important; min-height: 0 !important; height: auto !important;
+      gap: 8px !important;
+    }
+    .tension-left { flex: 0 0 auto !important; min-height: 0 !important; }
+    .gauge-wrap {
+      height: 240px !important; width: 100% !important;
+      flex: 0 0 auto !important; min-height: 0 !important;
+    }
+    .criteria-col { flex: 0 0 auto !important; min-height: 0 !important; height: auto !important; }
+    .crit-panel { flex: 0 0 auto !important; height: auto !important; padding: 8px 10px !important; gap: 5px !important; }
+    .crit-line { font-size: 10px !important; }
+    .crit-line .cd { font-size: 9px !important; }
+    .crit-row { grid-template-columns: 1fr 1fr 1fr !important; }
+
+    /* 그래프: 고정 높이로 겹침 방지 */
+    .chart-card { flex: 0 0 auto !important; height: auto !important; min-height: 0 !important; padding: 8px 10px !important; }
+    .chart-canvas-box { height: 200px !important; flex: 0 0 auto !important; min-height: 0 !important; }
+    .chart-title { font-size: 11px !important; }
+    .legend { font-size: 9.5px !important; gap: 7px !important; }
+    .axis-labels { font-size: 9px !important; }
+
+    .h0-grid { grid-template-columns: repeat(5, 1fr) !important; gap: 5px !important; flex: 0 0 auto !important; }
+    .h0-name { font-size: 9.5px !important; }
+    .h0-val { font-size: 13px !important; }
+    .h0-err { font-size: 8px !important; }
+
+    .candle-metrics { grid-template-columns: repeat(2,1fr) !important; gap: 6px !important; flex: 0 0 auto !important; }
+    .metric-label { font-size: 9.5px !important; }
+    .metric-val { font-size: 13px !important; }
+
+    .state-banner { font-size: 10.5px !important; padding: 6px 10px !important; }
+  }
+
+  /* ═══ 휴대폰 세로(portrait) - 위→아래 스크롤 ═══ */
+  @media (max-width: 820px) and (orientation: portrait) {
+    html { height: auto !important; overflow: visible !important; }
+    body {
+      height: auto !important;
+      min-height: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+      padding: 12px 10px 40px !important;
+      font-size: 14px !important;
+    }
+    .wrap {
+      height: auto !important;
+      max-width: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 16px !important;
+    }
+
+    /* 슬라이더 라벨 세로로 */
+    .slider-row { flex-wrap: wrap; }
+
+    /* 4파트를 무조건 위→아래 1열로 */
+    .main-grid {
+      display: flex !important;
+      flex-direction: column !important;
+      grid-template-columns: none !important;
+      grid-template-rows: none !important;
+      flex: 0 0 auto !important;
+      min-height: 0 !important;
+      height: auto !important;
+      gap: 26px !important;
+    }
+    .quad {
+      display: flex !important;
+      flex-direction: column !important;
+      min-height: 0 !important;
+      height: auto !important;
+      flex: 0 0 auto !important;
+      gap: 8px !important;
+    }
+
+    /* Part 제목 크게 */
+    .col-title { font-size: 15px !important; flex-wrap: wrap; }
+    .col-title small { font-size: 11.5px; }
+    .mini-metrics { margin-left: 0 !important; width: 100%; font-size: 12px; margin-top: 2px; }
+
+    /* 패널: 고정높이 해제하고 내용만큼 */
+    .panel { flex: 0 0 auto !important; height: auto !important; min-height: 0 !important; }
+
+    /* 허블텐션: 게이지 위 / σ기준 아래로 */
+    .tension-body {
+      display: flex !important;
+      flex-direction: column !important;
+      grid-template-columns: none !important;
+      flex: 0 0 auto !important;
+      min-height: 0 !important;
+      height: auto !important;
+      gap: 10px !important;
+    }
+    .tension-left { flex: 0 0 auto !important; }
+    .gauge-wrap {
+      height: 360px !important;
+      width: 100% !important;
+      flex: 0 0 auto !important;
+      min-height: 0 !important;
+    }
+    .criteria-col { min-height: auto !important; height: auto !important; flex: 0 0 auto !important; }
+    .crit-panel { flex: 0 0 auto !important; height: auto !important; min-height: 0 !important; padding: 12px 14px; gap: 9px; }
+    .crit-line { font-size: 12px !important; }
+    .crit-line .cd { font-size: 11px !important; }
+
+    /* 그래프 캔버스: 충분한 고정 높이 (겹침 방지 핵심) */
+    .chart-card {
+      flex: 0 0 auto !important;
+      height: auto !important;
+      min-height: 0 !important;
+      padding: 12px 14px;
+    }
+    .chart-canvas-box {
+      height: 300px !important;
+      min-height: 300px !important;
+      width: 100% !important;
+      flex: 0 0 auto !important;
+    }
+    .chart-title { font-size: 13px; }
+    .legend { font-size: 11px; gap: 10px; }
+    .axis-labels { font-size: 11px; }
+
+    /* H0 카드 2열 */
+    .h0-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; flex: 0 0 auto !important; }
+    .h0-name { font-size: 12px; }
+    .h0-val  { font-size: 18px; }
+    .h0-err  { font-size: 10px; }
+
+    /* 절대등급 하단 지표 2열 */
+    .candle-metrics { grid-template-columns: repeat(2,1fr) !important; gap: 8px; flex: 0 0 auto !important; }
+    .metric-label { font-size: 11px; }
+    .metric-val { font-size: 16px; }
+
+    .state-banner { font-size: 12.5px !important; padding: 8px 12px; flex: 0 0 auto !important; }
+
+    header { flex: 0 0 auto !important; }
+    header h1 { font-size: 17px !important; }
+    header p { font-size: 12px !important; }
+    .slider-panel { flex: 0 0 auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Ⅰa형 초신성의 <span>나이 보정 효과</span>에 따른 우주 가속/감속 팽창 모델 비교 시뮬레이터</h1>
+    <p>Son et al. (2025, MNRAS 544, 975–987) · 연세대학교 천문학과 — 나이 편향 보정 계수 k 슬라이더 하나로 네 파트(Part Ⅰ 표준 촛불 붕괴 · Part Ⅱ 허블텐션 · Part Ⅲ 암흑에너지 · Part Ⅳ 감속 매개변수)가 동시에 변합니다.</p>
+  </header>
+
+  <!-- ══ 통합 k 슬라이더 ══ -->
+  <div class="panel mb">
+    <div class="slider-wrap">
+      <div class="slider-top-label">나이 편향 보정 계수</div>
+      <div class="slider-row">
+        <span class="slider-name">k 값</span>
+        <input type="range" id="kSlider" min="0" max="1" step="0.01" value="0">
+        <span class="slider-k" id="kDisplay">k = 0.00</span>
+      </div>
+      <div class="slider-hints">
+        <span>k = 0 &nbsp;보정 없음 — H₀ ≈ 73.0, 가속 팽창 (q₀ &lt; 0)</span>
+        <span>k ≈ 0.59 &nbsp;가속↔감속 전환점</span>
+        <span>k = 1 &nbsp;완전 보정 (이영욱 교수 모델) — H₀ ≈ 70.3, 감속 팽창 (q₀ &gt; 0)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 좌우 2열 ══ -->
+  <div class="main-grid">
+
+    <!-- ═══ Part Ⅰ (좌상): 표준 촛불의 붕괴 — M(z) ═══ -->
+    <div class="quad">
+      <div class="col-title">Part Ⅰ. 표준 촛불 가정의 붕괴 <small>나이 편향 보정에 따른 초신성 절대등급 M(z)</small></div>
+      <div class="panel chart-card">
+        <div class="chart-title">표준화된 절대등급 M(z) &nbsp;|&nbsp; 기존 가정(수평선)이 k에 따라 기울어짐</div>
+        <div class="legend">
+          <span><span class="lbox" style="background:#7fa8ff;"></span>기존 가정: 표준 촛불 (M=−19.3 일정)</span>
+          <span><span class="lbox" style="background:#f5c542;"></span>현재 k</span>
+          <span><span class="lbox" style="background:#ff7b5c;"></span>완전 보정 k=1</span>
+        </div>
+        <div class="chart-canvas-box"><canvas id="mChart"></canvas></div>
+        <div class="axis-labels"><span>← 가까운 우주 (z=0)</span><span>먼 우주 (z=1) →</span></div>
+      </div>
+      <div class="candle-metrics">
+        <div class="metric"><div class="metric-label">z=1 등급 변화 Δm</div><div class="metric-val" id="cdDm" style="color:#f5c542;"></div></div>
+        <div class="metric"><div class="metric-label">z=1 유효 절대등급 M</div><div class="metric-val" id="cdM" style="color:#ff7b5c;"></div></div>
+        <div class="metric"><div class="metric-label">z=1 광도 (z=0 대비)</div><div class="metric-val" id="cdL" style="color:#ff7b5c;"></div></div>
+        <div class="metric"><div class="metric-label">표준 촛불 가정</div><div class="metric-val" id="cdSt" style="font-size:13px;color:#7fa8ff;"></div></div>
+      </div>
+    </div>
+
+    <!-- ═══ Part Ⅱ (우상): 허블 텐션의 변화 + σ 판정 기준 ═══ -->
+    <div class="quad">
+      <div class="col-title">Part Ⅱ. 허블텐션의 변화 <small>SN Ia H₀와 각 측정법의 통계적 긴장도</small></div>
+      <div class="tension-body">
+        <div class="tension-left">
+          <div class="panel gauge-wrap">
+            <canvas id="gaugeCanvas"></canvas>
+          </div>
+          <div class="h0-grid">
+            <div class="h0-card" style="border-top-color:#378ADD;">
+              <div class="h0-name">SN Ia</div>
+              <div class="h0-val" style="color:#378ADD;" id="cardSN">73.0</div>
+              <div class="h0-err" id="cardSNErr">±1.04 km/s/Mpc</div>
+            </div>
+        <div class="h0-card" style="border-top-color:#E24B4A;">
+          <div class="h0-name">TRGB</div>
+          <div class="h0-val" style="color:#E24B4A;">69.8</div>
+          <div class="h0-err">±1.9 km/s/Mpc</div>
+        </div>
+        <div class="h0-card" style="border-top-color:#EF9F27;">
+          <div class="h0-name">CMB</div>
+          <div class="h0-val" style="color:#EF9F27;" id="cardCMB">67.4</div>
+          <div class="h0-err">±0.5 km/s/Mpc · CPL 모형 가정</div>
+        </div>
+        <div class="h0-card" style="border-top-color:#639922;">
+          <div class="h0-name">BAO (DESI)</div>
+          <div class="h0-val" style="color:#639922;" id="cardBAO">68.4</div>
+          <div class="h0-err">+1.0/−0.8 km/s/Mpc · CPL 모형 가정</div>
+        </div>
+        <div class="h0-card" style="border-top-color:#7F77DD;">
+          <div class="h0-name">표준사이렌</div>
+          <div class="h0-val" style="color:#7F77DD;">70.0</div>
+          <div class="h0-err">+12/−8 km/s/Mpc</div>
+        </div>
+          </div>
+        </div>
+        <div class="criteria-col">
+          <div class="crit-title"><span style="text-transform:none;">σ</span> 판정 기준</div>
+          <div class="panel crit-panel">
+            <div class="crit-line"><span class="cs" style="color:#ff5c5c;">● 5σ 이상</span><span class="cd">발견(discovery) 수준. 우연일 확률 &lt;0.00006%. 학계에서 새 발견으로 공식 인정되는 기준.</span></div>
+            <div class="crit-line"><span class="cs" style="color:#f09595;">● 3.5σ ~ 5σ</span><span class="cd">강한 긴장. 우연일 확률 &lt;0.05%. 새로운 물리학이 필요할 수 있음.</span></div>
+            <div class="crit-line"><span class="cs" style="color:#faad3a;">● 2σ ~ 3.5σ</span><span class="cd">유의미한 긴장. 3σ 이상이면 학계에서 주목하는 수준.</span></div>
+            <div class="crit-line"><span class="cs" style="color:#97c459;">● 1σ ~ 2σ</span><span class="cd">통계적으로 무난한 차이. 측정 오차 안에서 자연스럽게 발생 가능.</span></div>
+            <div class="crit-line"><span class="cs" style="color:var(--text-hint);">● 1σ 미만</span><span class="cd">오차가 너무 커서 판단 불가. 어떤 값이든 오차 안에 묻혀 비교가 무의미.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Part Ⅲ (좌하): 암흑에너지 밀도 ═══ -->
+    <div class="quad">
+      <div class="col-title">Part Ⅲ. 암흑에너지 밀도의 진화 <small>CPL 모형 ρ_DE(a)</small>
+        <span class="mini-metrics"><b id="w0Val" style="color:var(--blue2);"></b> w₀ &nbsp; <b id="waVal" style="color:var(--green);"></b> wₐ &nbsp; <b id="OmVal" style="color:var(--lcdm);"></b> Ωₘ</span>
+      </div>
+      <div class="panel chart-card">
+        <div class="chart-title">암흑에너지 밀도 &nbsp;ρ_DE(a) / ρ_DE(a=1) &nbsp;|&nbsp; ΛCDM은 수평선(상수)</div>
+        <div class="legend">
+          <span><span class="lbox" style="background:#4e8ef7;"></span>현재 k</span>
+          <span><span class="lbox" style="background:#c8ccd8;"></span>ΛCDM</span>
+          <span><span class="lbox" style="background:#e5813a;"></span>k=0</span>
+          <span><span class="lbox" style="background:#2ec27e;"></span>k=1</span>
+        </div>
+        <div class="chart-canvas-box"><canvas id="rhoChart"></canvas></div>
+        <div class="axis-labels"><span>← 과거 (a 작음)</span><span>현재 (a=1) →</span></div>
+      </div>
+    </div>
+
+    <!-- ═══ Part Ⅳ (우하): 감속 매개변수 ═══ -->
+    <div class="quad">
+      <div class="col-title">Part Ⅳ. 감속 매개변수 q(t) <small>q&lt;0 가속 · q&gt;0 감속</small>
+        <span class="mini-metrics"><b id="q0Val"></b> q₀ (현재)</span>
+      </div>
+      <div class="state-banner" id="stateBanner"></div>
+      <div class="panel chart-card">
+        <div class="chart-title">감속 매개변수 &nbsp;q(t) = −aä/ȧ²</div>
+        <div class="legend">
+          <span><span class="lbox" style="background:#4e8ef7;"></span>현재 k</span>
+          <span><span class="lbox" style="background:#c8ccd8;"></span>ΛCDM</span>
+          <span><span class="lbox" style="background:#e5813a;"></span>k=0</span>
+          <span><span class="lbox" style="background:#2ec27e;"></span>k=1</span>
+          <span><span style="width:12px;height:0;border-top:1.5px dashed rgba(255,255,255,0.4);display:inline-block;vertical-align:middle;"></span>&nbsp;현재/q=0</span>
+        </div>
+        <div class="chart-canvas-box"><canvas id="qChart"></canvas></div>
+        <div class="axis-labels"><span>← 과거</span><span>점선=현재</span><span>미래 →</span></div>
+      </div>
+    </div>
+
+  </div>
+
+
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   CMB H₀ 역산 모듈 — CPL 모형 가정 시 Planck 음향척도(θ*) 고정 조건
+   원리: Planck은 θ* = r* ÷ D_M(z*)를 0.03% 정밀도로 측정 (Planck 2018 VI).
+   r*는 ω_b, ω_m(물리적 밀도)에만 의존하므로 ω_m = Ω_m h² = 0.1430 고정,
+   암흑에너지를 CPL(w₀(k), wₐ(k))로 바꾸면 D_M(z*)를 유지하는 h가 달라짐
+   → CMB로 추론되는 H₀가 k에 따라 변화 (기하학적 축퇴).
+   k=0 (DES5YR w₀wₐCDM 기준)에서 H₀=67.4가 되도록 정규화.
+   ═══════════════════════════════════════════════════ */
+const CMBInfer = (function () {
+  const OM_H2 = 0.1430;      // Ω_m h² (Planck TT,TE,EE+lowE+lensing)
+  const OR_H2 = 4.18e-5;     // 복사 밀도 ω_r (N_eff = 3.046)
+  const ZSTAR = 1089.92;     // 재결합 적색이동 z*
+  const ASTAR = 1/(1+ZSTAR);
+
+  const w0fn = k => -0.754 + 0.417*k;
+  const wafn = k => -0.848 - 1.054*k;
+  const fDE  = (a,w0,wa) => Math.pow(a,-3*(1+w0+wa))*Math.exp(3*wa*(a-1));
+
+  /* D_M(z*) ∝ (1/h)∫ d ln a / (a·E(a)) */
+  function dist(h,w0,wa){
+    const ode = 1 - (OM_H2+OR_H2)/(h*h);
+    const N=500, la0=Math.log(ASTAR), dla=-la0/N;
+    let s=0;
+    for(let i=0;i<N;i++){
+      const a=Math.exp(la0+(i+0.5)*dla);
+      const E2=(OM_H2*Math.pow(a,-3)+OR_H2*Math.pow(a,-4))/(h*h)+ode*fDE(a,w0,wa);
+      s += dla/(a*Math.sqrt(E2));
+    }
+    return s/h;
+  }
+
+  /* 이분법으로 D_M(z*) = D_ref 를 만족하는 h 탐색 (dist는 h에 단조 감소) */
+  function solveH(w0,wa,target){
+    let lo=0.45, hi=0.95;
+    for(let i=0;i<45;i++){
+      const mid=0.5*(lo+hi);
+      if(dist(mid,w0,wa) > target) lo=mid; else hi=mid;
+    }
+    return 0.5*(lo+hi);
+  }
+
+  /* k=0에서 CMB H₀ = 67.4가 되도록 기준 거리 설정 */
+  const D_REF = dist(0.674, w0fn(0), wafn(0));
+
+  /* k → H₀ 룩업 테이블 (0.01 간격, 초기 1회 계산으로 슬라이더 응답 최적화) */
+  const TABLE=[];
+  for(let i=0;i<=100;i++){
+    const k=i/100;
+    TABLE.push(100*solveH(w0fn(k),wafn(k),D_REF));
+  }
+
+  function H0ofK(k){
+    const x=Math.min(Math.max(k,0),1)*100;
+    const i=Math.min(Math.floor(x),99), f=x-i;
+    return TABLE[i]*(1-f)+TABLE[i+1]*f;
+  }
+
+  return { H0ofK };
+})();
+
+
+/* ═══════════════════════════════════════════════════
+   BAO H₀ 역산 모듈 — CPL 모형 가정 시 SDSS BAO 표준자(r_d/D) 고정 조건
+   원리: BAO가 실제로 측정하는 것은 무차원 량 D_M(z)/r_d, D_H(z)/r_d
+   (Alam et al. 2021, Table III — SDSS MGS/BOSS/eBOSS/Lyα 8개 구간).
+   음향지평선 r_d는 재결합 이전 물리(ω_b, ω_m)로만 결정되므로
+   후기 암흑에너지 모형이 바뀌어도 고정. 반면 모형 예측값은
+   D_H/r_d = c/(H₀ r_d E(z)),  D_M/r_d = (c/H₀r_d)∫dz'/E(z')
+   ∝ 1/H₀ 이므로, k → (Ωₘ, w₀, wₐ) 변화 → E(z) 변화 → 동일한
+   관측값을 맞추는 최적 H₀가 변화 (χ² 해석적 최소화).
+   k=0에서 BAO H₀ = 68.4 (DESI DR2)로 정규화.
+   ═══════════════════════════════════════════════════ */
+const BAOInfer = (function () {
+  const w0fn = k => -0.754 + 0.417*k;
+  const wafn = k => -0.848 - 1.054*k;
+  const Omfn = k =>  0.319 + 0.044*k;
+  const fDE  = (a,w0,wa) => Math.pow(a,-3*(1+w0+wa))*Math.exp(3*wa*(a-1));
+  const Efn  = (z,w0,wa,Om) => {
+    const a=1/(1+z);
+    return Math.sqrt(Om*Math.pow(a,-3) + (1-Om)*fDE(a,w0,wa));
+  };
+
+  /* SDSS BAO-only 측정값 (Alam et al. 2021, Phys. Rev. D 103, 083533; Table III)
+     type: 'M' = D_M/r_d (횡방향), 'H' = D_H/r_d (시선방향), 'V' = D_V/r_d (등방) */
+  const DATA = [
+    { z:0.15, type:'V', obs: 4.47, sig:0.17 },                       // SDSS MGS
+    { z:0.38, type:'M', obs:10.23, sig:0.17 }, { z:0.38, type:'H', obs:25.00, sig:0.76 }, // BOSS
+    { z:0.51, type:'M', obs:13.36, sig:0.21 }, { z:0.51, type:'H', obs:22.33, sig:0.58 }, // BOSS
+    { z:0.70, type:'M', obs:17.86, sig:0.33 }, { z:0.70, type:'H', obs:19.33, sig:0.53 }, // eBOSS LRG
+    { z:0.85, type:'V', obs:18.33, sig:0.60 },                       // eBOSS ELG
+    { z:1.48, type:'M', obs:30.69, sig:0.80 }, { z:1.48, type:'H', obs:13.26, sig:0.55 }, // eBOSS QSO
+    { z:2.33, type:'M', obs:37.60, sig:1.90 }, { z:2.33, type:'H', obs: 8.93, sig:0.28 }, // Lyα–Lyα
+    { z:2.33, type:'M', obs:37.30, sig:1.70 }, { z:2.33, type:'H', obs: 9.08, sig:0.34 }, // Lyα–QSO
+  ];
+  const C_KMS = 299792.458, RD = 147.18; // r_d [Mpc], 재결합 이전 물리로 고정 (정규화로 절대값 의존성 상쇄)
+
+  /* 무차원 적분 f_M(z) = ∫₀ᶻ dz'/E(z') */
+  function fM(z,w0,wa,Om){
+    const N=400, dz=z/N; let s=0;
+    for(let i=0;i<N;i++) s += dz/Efn((i+0.5)*dz,w0,wa,Om);
+    return s;
+  }
+
+  /* 주어진 (w₀,wₐ,Ωₘ)에서 χ²(H₀) = Σ[(Aᵢ/h − obsᵢ)/σᵢ]² 를 해석적으로 최소화.
+     모형값 = Aᵢ/h (h = H₀/100) 이므로 u=1/h에 대해 u* = Σ(Aᵢobsᵢ/σᵢ²)/Σ(Aᵢ²/σᵢ²) */
+  function bestH0(w0,wa,Om){
+    const K = C_KMS/(100*RD);
+    let num=0, den=0;
+    for(const d of DATA){
+      let A;
+      if(d.type==='H')      A = K/Efn(d.z,w0,wa,Om);
+      else if(d.type==='M') A = K*fM(d.z,w0,wa,Om);
+      else { const m=fM(d.z,w0,wa,Om), h=1/Efn(d.z,w0,wa,Om);
+             A = K*Math.cbrt(d.z*m*m*h); }
+      num += A*d.obs/(d.sig*d.sig);
+      den += A*A  /(d.sig*d.sig);
+    }
+    return 100*den/num;   // H₀ = 100/u*
+  }
+
+  /* k=0에서 68.4 (시뮬레이터 기준 DESI 값)가 되도록 정규화 후 룩업 테이블 */
+  const NORM = 68.4 / bestH0(w0fn(0),wafn(0),Omfn(0));
+  const TABLE=[];
+  for(let i=0;i<=100;i++){
+    const k=i/100;
+    TABLE.push(NORM*bestH0(w0fn(k),wafn(k),Omfn(k)));
+  }
+
+  function H0ofK(k){
+    const x=Math.min(Math.max(k,0),1)*100;
+    const i=Math.min(Math.floor(x),99), f=x-i;
+    return TABLE[i]*(1-f)+TABLE[i+1]*f;
+  }
+
+  return { H0ofK };
+})();
+
+
+
+
+
+/* ═══════════════════════════════════════════════════
+   Ⅱ. 허블 텐션 게이지 (좌측)
+   ═══════════════════════════════════════════════════ */
+const HubbleGauge = (function () {
+  const FONT     = "'Noto Sans KR', sans-serif";
+  const H0_BASE  = 73.04;
+  const H0_CORR  = 2.75;
+  const ERR_BASE = 1.04;
+  const ERR_CORR = 0.52;
+
+  /* Canvas layout */
+  const PL        = 132;
+  const SIG_W     = 108;
+  const SIG_GAP   = 10;
+  const PR_MARGIN = 6;
+  const PR        = SIG_W + SIG_GAP + PR_MARGIN;
+
+  const MEAS = [
+    { label:'SN Ia',     sub:'(1a형 초신성)', color:'#378ADD', dynamic:true,
+      refVal:null, refErr:null },
+    { label:'TRGB',      sub:'',             color:'#E24B4A',
+      val:69.8, em:1.9,  ep:1.9,  refVal:69.8, refErr:1.9  },
+    { label:'CMB',       sub:'(Planck)',      color:'#EF9F27', dynamicCMB:true,
+      val:67.4, em:0.5,  ep:0.5,  refVal:67.4, refErr:0.5  },
+    { label:'BAO',       sub:'(DESI)',        color:'#639922', dynamicBAO:true,
+      val:68.4, em:0.8,  ep:1.0,  refVal:68.4, refErr:1.0  },
+    { label:'표준사이렌', sub:'',             color:'#7F77DD',
+      val:70.0, em:8.0,  ep:12.0, refVal:70.0, refErr:12.0 },
+  ];
+
+  const snVal = k => H0_BASE - k * H0_CORR;
+  const snErr = k => Math.sqrt(ERR_BASE**2 + (k*ERR_CORR)**2);
+  const calcT = (k,rv,re) => Math.abs(snVal(k)-rv) / Math.sqrt(snErr(k)**2 + re**2);
+
+  /* 상보 오차 함수 (Horner 근사, 최대 오차 1.5e-7) */
+  function erfc(x) {
+    const t  = 1 / (1 + 0.3275911 * x);
+    const p  = t * (0.254829592
+             + t * (-0.284496736
+             + t * (1.421413741
+             + t * (-1.453152027
+             + t *  1.061405429))));
+    return p * Math.exp(-x * x);
+  }
+
+  function sigmaToPct(t) {
+    if (t <= 0) return '—';
+    const p   = erfc(t / Math.SQRT2);
+    const pct = p * 100;
+    if (pct >= 10)      return pct.toFixed(1)  + '%';
+    if (pct >= 1)       return pct.toFixed(2)  + '%';
+    if (pct >= 0.1)     return pct.toFixed(3)  + '%';
+    if (pct >= 0.01)    return pct.toFixed(4)  + '%';
+    if (pct >= 0.001)   return pct.toFixed(5)  + '%';
+    if (pct >= 0.0001)  return pct.toFixed(6)  + '%';
+    if (pct >= 0.00001) return pct.toFixed(7)  + '%';
+    return pct.toFixed(8) + '%';
+  }
+
+  const sigColor = t =>
+    t >= 5   ? '#ff5c5c' :
+    t >= 3.5 ? '#f09595' :
+    t >= 2   ? '#faad3a' :
+    t >= 1   ? '#97c459' :
+               'rgba(255,255,255,0.32)';
+
+  const hexRgba = (hex,a) => {
+    const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${a})`;
+  };
+
+  const canvas = document.getElementById('gaugeCanvas');
+  const ctx    = canvas.getContext('2d');
+  let currentK = 0;
+  let currentCMB = 67.4;
+  let currentBAO = 68.4;
+
+  function draw(k) {
+    currentK = k;
+    const dpr = Math.min(window.devicePixelRatio||1, 2);
+    const parent = canvas.parentElement;
+    const W   = parent.clientWidth - 24;
+    const Hbox = parent.clientHeight - 16;      // 부모 박스 실제 높이
+    if (W <= 0 || Hbox <= 0) return;
+    const N   = MEAS.length;
+    const PT  = 30;
+    // 세로 구성요소 높이(행 제외)를 먼저 정하고, 남는 높이를 N개 행에 배분
+    const tenGap=12, tenH=26, axisGap=8, tickH=18, titleH=20, botPad=6;
+    const fixedChrome = PT + tenGap + tenH + axisGap + tickH + titleH + botPad;
+    let rowH = (Hbox - fixedChrome) / N;
+    rowH = Math.max(26, Math.min(60, rowH));    // 너무 납작/과대 방지
+    const plotH    = rowH * N;
+    const AXIS_Y   = PT + plotH + tenGap + tenH + axisGap;
+    const TEN_BAR_Y= PT + plotH + tenGap + tenH - 8;
+    const TEN_LBL_Y= TEN_BAR_Y - 11;
+    // 캔버스 높이는 부모 박스를 넘지 않도록 클램프 (튀어나감 방지)
+    const H        = Math.min(Hbox, AXIS_Y + tickH + titleH + botPad);
+    // 캔버스 폭에 따른 스케일 (좁아지면 폰트·컬럼폭 함께 축소 → 겹침/넘침 방지)
+    const sc = Math.max(0.72, Math.min(1.0, W / 560));
+    const SIG_W_s = SIG_W * sc;
+    const PL_s = PL * Math.max(0.82, sc);
+    const PR_s = SIG_W_s + SIG_GAP + PR_MARGIN;
+    const plotW    = W - PL_s - PR_s;
+    const plotRight= PL_s + plotW;
+    const sigColX  = plotRight + SIG_GAP;
+    const sigTextX = W - PR_MARGIN;
+
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    ctx.setTransform(1,0,0,1,0,0); ctx.scale(dpr,dpr);
+    ctx.clearRect(0,0,W,H);
+
+    const HMIN=57, HMAX=86;
+    const xp = v => PL_s + (v-HMIN)/(HMAX-HMIN)*plotW;
+    const yc = i => PT + (i+0.5)*rowH;
+
+    /* ── 열 머리글 ── */
+    ctx.font=`400 ${(9.5*sc).toFixed(1)}px ${FONT}`;
+    ctx.fillStyle='rgba(255,255,255,0.28)';
+    ctx.textAlign='right';
+    ctx.fillText('vs SN Ia', sigTextX, PT - 26);
+    ctx.fillText('텐션이 우연일 확률', sigTextX, PT - 10);
+
+    ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=0.5;
+    ctx.beginPath(); ctx.moveTo(sigColX-4, PT-34); ctx.lineTo(sigColX-4, AXIS_Y); ctx.stroke();
+
+    /* ── 격자 ── */
+    ctx.font=`${(12*sc).toFixed(1)}px ${FONT}`;
+    for (let v=58; v<=84; v+=2) {
+      const x=xp(v);
+      ctx.strokeStyle='rgba(255,255,255,0.07)'; ctx.lineWidth=0.5;
+      ctx.beginPath(); ctx.moveTo(x,PT); ctx.lineTo(x,AXIS_Y); ctx.stroke();
+      ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.textAlign='center';
+      ctx.fillText(v, x, AXIS_Y+tickH);
+    }
+    ctx.strokeStyle='rgba(255,255,255,0.18)'; ctx.lineWidth=0.5;
+    ctx.beginPath(); ctx.moveTo(PL_s,AXIS_Y); ctx.lineTo(plotRight,AXIS_Y); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.38)'; ctx.textAlign='center';
+    ctx.font=`12px ${FONT}`;
+    ctx.fillText('H₀  (km/s/Mpc)', PL_s+plotW/2, AXIS_Y+tickH+titleH-2);
+
+    /* ── 각 측정법 행 ── */
+    const BH=Math.min(rowH*0.46,19);
+
+    MEAS.forEach((m,i) => {
+      const isSN =!!m.dynamic;
+      const isCMB=!!m.dynamicCMB;
+      const isBAO=!!m.dynamicBAO;
+      const val =isSN ? snVal(k) : (isCMB ? currentCMB : (isBAO ? currentBAO : m.val));
+      const em  =isSN ? snErr(k) : m.em;
+      const ep  =isSN ? snErr(k) : m.ep;
+      const y   =yc(i);
+      const xLo =xp(val-em), xHi=xp(val+ep), xCen=xp(val);
+      const xLoC=Math.max(xLo,PL_s), xHiC=Math.min(xHi,plotRight);
+
+      if (i<N-1) {
+        ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=0.5;
+        ctx.beginPath(); ctx.moveTo(PL_s,y+rowH/2); ctx.lineTo(plotRight,y+rowH/2); ctx.stroke();
+      }
+      if (isSN)  { ctx.fillStyle='rgba(55,138,221,0.06)'; ctx.fillRect(PL_s,y-rowH*0.48,plotW,rowH*0.96); }
+      if (isCMB) { ctx.fillStyle='rgba(239,159,39,0.06)'; ctx.fillRect(PL_s,y-rowH*0.48,plotW,rowH*0.96); }
+      if (isBAO) { ctx.fillStyle='rgba(99,153,34,0.06)';  ctx.fillRect(PL_s,y-rowH*0.48,plotW,rowH*0.96); }
+
+      ctx.fillStyle=hexRgba(m.color,isSN?0.22:0.15);
+      ctx.fillRect(xLoC,y-BH/2,xHiC-xLoC,BH);
+
+      ctx.strokeStyle=hexRgba(m.color,0.60); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(xLoC,y); ctx.lineTo(xHiC,y); ctx.stroke();
+
+      const capH=BH*0.44;
+      [[xLoC,xLo>=PL_s],[xHiC,xHi<=plotRight]].forEach(([x,vis])=>{
+        if(!vis)return;
+        ctx.strokeStyle=m.color; ctx.lineWidth=isSN?2:1.5;
+        ctx.beginPath(); ctx.moveTo(x,y-capH); ctx.lineTo(x,y+capH); ctx.stroke();
+      });
+
+      ctx.strokeStyle=m.color; ctx.lineWidth=isSN?3:2;
+      ctx.beginPath(); ctx.moveTo(xCen,y-BH*0.72); ctx.lineTo(xCen,y+BH*0.72); ctx.stroke();
+
+      ctx.fillStyle=m.color;
+      if (isSN) {
+        const r=6.5;
+        ctx.beginPath(); ctx.moveTo(xCen,y-r); ctx.lineTo(xCen+r*0.72,y);
+        ctx.lineTo(xCen,y+r); ctx.lineTo(xCen-r*0.72,y); ctx.closePath(); ctx.fill();
+      } else { ctx.beginPath(); ctx.arc(xCen,y,4.5,0,Math.PI*2); ctx.fill(); }
+
+      /* 행 이름 */
+      ctx.textAlign='right'; ctx.fillStyle=m.color;
+      ctx.font=isSN?`700 13px ${FONT}`:`400 12px ${FONT}`;
+      ctx.fillText(m.label, PL_s-8, y+(m.sub?-3:4));
+      if (m.sub) {
+        ctx.font=`400 9.5px ${FONT}`; ctx.fillStyle=hexRgba(m.color,0.65);
+        ctx.fillText(m.sub, PL_s-8, y+10);
+      }
+
+      /* H₀ 값 라벨 */
+      const lblMax = sigColX - 6;
+      ctx.font=`700 12px ${FONT}`; ctx.fillStyle=m.color; ctx.textAlign='left';
+      const txt=val.toFixed(1), tw=ctx.measureText(txt).width;
+      let lx=xHiC+8; if(lx+tw>lblMax) lx=lblMax-tw;
+      ctx.fillText(txt, lx, y+4);
+
+      /* ── 우측 열: σ 값 + 확률 ── */
+      ctx.textAlign='right';
+      if (!isSN && m.refVal !== null) {
+        const t   = calcT(k, val, m.refErr);
+        const col = sigColor(t);
+        const pct = sigmaToPct(t);
+
+        ctx.font=`700 ${(14*sc).toFixed(1)}px ${FONT}`;
+        ctx.fillStyle=col;
+        ctx.fillText(t.toFixed(1)+'σ', sigTextX, y - 8);
+
+        ctx.font=`400 ${(10*sc).toFixed(1)}px ${FONT}`;
+        ctx.fillStyle=hexRgba(col.startsWith('rgba') ? '#ffffff' : col, 0.65);
+        ctx.fillText(pct, sigTextX, y + 11);
+
+      } else if (isSN) {
+        ctx.font=`400 10px ${FONT}`;
+        ctx.fillStyle='rgba(255,255,255,0.22)';
+        ctx.fillText('기준', sigTextX, y + 4);
+      }
+    });
+
+    /* ── 허블 텐션 브래킷 ── */
+    const sX=xp(snVal(k)), cX=xp(currentCMB);
+    if (sX>cX+8) {
+      ctx.setLineDash([3,5]); ctx.strokeStyle='rgba(255,255,255,0.28)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(sX,yc(0)+BH/2+5); ctx.lineTo(sX,TEN_BAR_Y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cX,yc(2)+BH/2+5); ctx.lineTo(cX,TEN_BAR_Y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle='rgba(255,255,255,0.92)'; ctx.lineWidth=3; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(cX,TEN_BAR_Y); ctx.lineTo(sX,TEN_BAR_Y); ctx.stroke();
+      ctx.lineCap='butt';
+      const aw=6; ctx.fillStyle='rgba(255,255,255,0.92)';
+      ctx.beginPath(); ctx.moveTo(cX,TEN_BAR_Y); ctx.lineTo(cX+aw,TEN_BAR_Y-aw*0.55); ctx.lineTo(cX+aw,TEN_BAR_Y+aw*0.55); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(sX,TEN_BAR_Y); ctx.lineTo(sX-aw,TEN_BAR_Y-aw*0.55); ctx.lineTo(sX-aw,TEN_BAR_Y+aw*0.55); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,0.88)'; ctx.textAlign='center';
+      ctx.font=`500 11px ${FONT}`;
+      ctx.fillText('허블 텐션', (cX+sX)/2, TEN_LBL_Y);
+    }
+  }
+
+  function update(k, cmbH0, baoH0) {
+    if (typeof cmbH0 === 'number') currentCMB = cmbH0;
+    if (typeof baoH0 === 'number') currentBAO = baoH0;
+    document.getElementById('cardSN').textContent    = snVal(k).toFixed(1);
+    document.getElementById('cardSNErr').textContent = '±'+snErr(k).toFixed(2)+' km/s/Mpc';
+    document.getElementById('cardCMB').textContent   = currentCMB.toFixed(1);
+    document.getElementById('cardBAO').textContent   = currentBAO.toFixed(1);
+    draw(k);
+  }
+
+  window.addEventListener('resize', ()=>draw(currentK));
+  // 부모 박스 크기 변화(줌 포함)를 직접 감지해 재렌더 → 축·σ 겹침/사라짐 방지
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(()=>draw(currentK));
+    ro.observe(canvas.parentElement);
+  }
+  return { update };
+})();
+
+
+/* ═══════════════════════════════════════════════════
+   Ⅲ. CPL 암흑에너지 / q(t) 시뮬레이터 (우측)
+   ═══════════════════════════════════════════════════ */
+const CosmoModel = (function () {
+  const H0_inv_Gyr = 977.8 / 67.7;
+
+  function w0fn(k){ return -0.754 + 0.417*k; }
+  function wafn(k){ return -0.848 - 1.054*k; }
+  function Omfn(k){ return 0.319 + 0.044*k; }
+  function wOfA(a,w0v,wav){ return w0v + wav*(1-a); }
+
+  function rhoDE(a,w0v,wav){
+    return Math.pow(a,-3*(1+w0v+wav)) * Math.exp(3*wav*(a-1));
+  }
+  function E2(a,w0v,wav,Om){
+    return Om*Math.pow(a,-3) + (1-Om)*rhoDE(a,w0v,wav);
+  }
+  function qOfA(a,w0v,wav,Om){
+    const w=wOfA(a,w0v,wav);
+    const rM=Om*Math.pow(a,-3);
+    const rD=(1-Om)*rhoDE(a,w0v,wav);
+    const h2=rM+rD;
+    if(h2<=0) return 0;
+    return (0.5*rM + 0.5*rD*(1+3*w)) / h2;
+  }
+  function aToTime(a_t,w0v,wav,Om){
+    const N=1000, a0=1e-5, da=(a_t-a0)/N;
+    let t=0;
+    for(let i=0;i<N;i++){
+      const ai=a0+(i+0.5)*da;
+      const e2=E2(ai,w0v,wav,Om);
+      if(e2>0) t+=da/(ai*Math.sqrt(e2));
+    }
+    return t*H0_inv_Gyr;
+  }
+
+  const aArr=[];
+  for(let a=0.10;a<=1.001;a+=0.01) aArr.push(parseFloat(a.toFixed(3)));
+
+  function buildQpts(w0v,wav,Om){
+    const pts=[];
+    const N=700;
+    for(let i=0;i<=N;i++){
+      const a=Math.pow(10, Math.log10(0.002)+i*(Math.log10(3.0)-Math.log10(0.002))/N);
+      const t=aToTime(a,w0v,wav,Om);
+      const q=qOfA(a,w0v,wav,Om);
+      if(isFinite(t)&&isFinite(q)&&t>=0&&t<=40)
+        pts.push({x:t, y:Math.max(-1.5,Math.min(1.5,q))});
+    }
+    pts.sort((a,b)=>a.x-b.x);
+    return pts;
+  }
+
+  const ptsL =buildQpts(-1,     0,      0.30);
+  const pts0 =buildQpts(w0fn(0),wafn(0),Omfn(0));
+  const pts1 =buildQpts(w0fn(1),wafn(1),Omfn(1));
+  const tNow0=aToTime(1,w0fn(0),wafn(0),Omfn(0));
+
+  const gridC='rgba(255,255,255,0.06)';
+  const tickC='rgba(255,255,255,0.45)';
+  const nowC ='rgba(255,255,255,0.4)';
+  const zeroC='rgba(255,255,255,0.15)';
+
+  const nowPlugin={
+    id:'nowLine',
+    afterDraw(chart){
+      const {ctx,chartArea,scales}=chart;
+      if(!chartArea||!chart._tNow) return;
+      const xPx=scales.x.getPixelForValue(chart._tNow);
+      ctx.save();
+      ctx.beginPath(); ctx.setLineDash([5,5]);
+      ctx.strokeStyle=nowC; ctx.lineWidth=1.5;
+      ctx.moveTo(xPx,chartArea.top); ctx.lineTo(xPx,chartArea.bottom);
+      ctx.stroke(); ctx.restore();
+    }
+  };
+  Chart.register(nowPlugin);
+
+  const rhoChart=new Chart(document.getElementById('rhoChart'),{
+    type:'line',
+    data:{
+      labels:aArr.map(a=>a.toFixed(2)),
+      datasets:[
+        {data:[], borderColor:'#4e8ef7', borderWidth:2.5, pointRadius:0, tension:0.3},
+        {data:aArr.map(()=>1), borderColor:'#c8ccd8', borderWidth:1.5, borderDash:[6,4], pointRadius:0},
+        {data:aArr.map(a=>rhoDE(a,w0fn(0),wafn(0))), borderColor:'#e5813a', borderWidth:1.5, borderDash:[3,3], pointRadius:0, tension:0.3},
+        {data:aArr.map(a=>rhoDE(a,w0fn(1),wafn(1))), borderColor:'#2ec27e', borderWidth:1.5, borderDash:[3,3], pointRadius:0, tension:0.3}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{
+        x:{title:{display:true,text:'척도인자 a',color:tickC,font:{size:10}},ticks:{color:tickC,maxTicksLimit:8},grid:{color:gridC}},
+        y:{title:{display:true,text:'ρ_DE(a)/ρ_DE(1)',color:tickC,font:{size:10}},ticks:{color:tickC},grid:{color:gridC},min:0,max:1.8}
+      }}
+  });
+
+  const qChart=new Chart(document.getElementById('qChart'),{
+    type:'scatter',
+    data:{
+      datasets:[
+        {data:pts0.slice(), borderColor:'#4e8ef7', backgroundColor:'#4e8ef7', showLine:true, borderWidth:2.5, pointRadius:0},
+        {data:ptsL,         borderColor:'#c8ccd8', backgroundColor:'#c8ccd8', showLine:true, borderWidth:1.8, pointRadius:0},
+        {data:pts0.slice(), borderColor:'#e5813a', backgroundColor:'#e5813a', showLine:true, borderWidth:1.8, borderDash:[5,3], pointRadius:0},
+        {data:pts1,         borderColor:'#2ec27e', backgroundColor:'#2ec27e', showLine:true, borderWidth:1.8, borderDash:[5,3], pointRadius:0},
+        {data:[{x:0,y:0},{x:40,y:0}], borderColor:zeroC, backgroundColor:zeroC, showLine:true, borderWidth:1, borderDash:[4,4], pointRadius:0}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{
+        x:{type:'linear',
+           title:{display:true,text:'우주 나이 (Gyr)',color:tickC,font:{size:10}},
+           ticks:{color:tickC,maxTicksLimit:8,callback:v=>v.toFixed(0)},
+           grid:{color:gridC}, min:0, max:40},
+        y:{title:{display:true,text:'q = −aä/ȧ²',color:tickC,font:{size:10}},
+           ticks:{color:tickC},grid:{color:gridC},min:-1.2,max:1.2}
+      }}
+  });
+  qChart._tNow=tNow0;
+
+  function update(k){
+    const w0v=w0fn(k),wav=wafn(k),Om=Omfn(k);
+    document.getElementById('w0Val').textContent=w0v.toFixed(3);
+    document.getElementById('waVal').textContent=wav.toFixed(3);
+    document.getElementById('OmVal').textContent=Om.toFixed(3);
+
+    const q0v=qOfA(1,w0v,wav,Om);
+    const qEl=document.getElementById('q0Val');
+    qEl.textContent=q0v.toFixed(3);
+
+    const banner=document.getElementById('stateBanner');
+    if(q0v < -0.03){
+      qEl.style.color='#4e8ef7';
+      banner.style.background='rgba(78,142,247,0.12)';
+      banner.style.color='#4e8ef7';
+      banner.style.border='1px solid rgba(78,142,247,0.3)';
+      banner.textContent=`현재 우주: 가속 팽창 중 (q₀ = ${q0v.toFixed(3)}) — 나이 보정이 적을수록 암흑에너지가 강하게 작용`;
+    } else if(q0v > 0.03){
+      qEl.style.color='#d94f4f';
+      banner.style.background='rgba(217,79,79,0.12)';
+      banner.style.color='#d94f4f';
+      banner.style.border='1px solid rgba(217,79,79,0.3)';
+      banner.textContent=`현재 우주: 감속 팽창 중 (q₀ = ${q0v.toFixed(3)}) — 나이 보정 후 Son+2025의 핵심 결론`;
+    } else {
+      qEl.style.color='#2ec27e';
+      banner.style.background='rgba(46,194,126,0.12)';
+      banner.style.color='#2ec27e';
+      banner.style.border='1px solid rgba(46,194,126,0.3)';
+      banner.textContent=`현재 우주: 가속↔감속 전환점 (q₀ ≈ 0) — k ≈ 0.59`;
+    }
+
+    rhoChart.data.datasets[0].data=aArr.map(a=>rhoDE(a,w0v,wav));
+    rhoChart.update('none');
+
+    const ptsK=buildQpts(w0v,wav,Om);
+    const tNow=aToTime(1,w0v,wav,Om);
+    qChart.data.datasets[0].data=ptsK;
+    qChart._tNow=tNow;
+    qChart.update();
+  }
+
+  return { update };
+})();
+
+
+/* ═══════════════════════════════════════════════════
+   Part Ⅰ. 표준 촛불의 붕괴 — M(z, k)
+   M(z,k) = M₀ + k·s·Δage(z),  Δage(z)=5.3z (0<z<1 선형 근사)
+   M₀ = −19.3 mag,  s = 0.030 mag/Gyr (Son+2025 나이-잔차 기울기)
+   ═══════════════════════════════════════════════════ */
+const StandardCandle = (function () {
+  const M0 = -19.3, S = 0.030, DAGE = 5.3;
+  const FE='#7fa8ff', NI='#f5c542', CO='#ff7b5c';
+  const gridC='rgba(255,255,255,0.06)', tickC='rgba(255,255,255,0.45)';
+
+  const Mzk = (z,k) => M0 + k*S*DAGE*z;              // 표준화 후 절대등급
+  const zArr=[]; for(let z=0; z<=1.001; z+=0.02) zArr.push(+z.toFixed(2));
+
+  const mChart = new Chart(document.getElementById('mChart'),{
+    type:'line',
+    data:{ labels:zArr.map(z=>z.toFixed(2)), datasets:[
+      // 기존 가정: 표준 촛불 (수평선)
+      {data:zArr.map(()=>M0), borderColor:FE, borderWidth:1.8, borderDash:[6,4], pointRadius:0},
+      // 현재 k (채워짐)
+      {data:zArr.map(z=>Mzk(z,0)), borderColor:NI, backgroundColor:'rgba(245,197,66,0.10)',
+       fill:'-1', borderWidth:2.5, pointRadius:0, tension:0.12},
+      // 완전 보정 k=1
+      {data:zArr.map(z=>Mzk(z,1)), borderColor:CO, borderWidth:1.4, borderDash:[3,4], pointRadius:0, tension:0.12}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>` M = ${(+c.parsed.y).toFixed(3)} mag`}}},
+      scales:{
+        x:{title:{display:true,text:'적색편이 z  (→ 먼 우주)',color:tickC,font:{size:10}},
+           ticks:{color:tickC,maxTicksLimit:6},grid:{color:gridC}},
+        y:{reverse:true, min:-19.35, max:-19.08,
+           title:{display:true,text:'절대등급 M [mag] (↑밝음)',color:tickC,font:{size:10}},
+           ticks:{color:tickC,callback:v=>(+v).toFixed(2)},grid:{color:gridC}}
+      }}
+  });
+
+  function update(k){
+    const dm = k*S*DAGE;                       // z=1에서의 등급 변화
+    const Meff = M0 + dm;
+    const Lratio = Math.pow(10,-0.4*dm)*100;   // 광도비 %
+    const q = id=>document.getElementById(id);
+    q('cdDm').innerHTML = '+'+dm.toFixed(3)+' <span style="font-size:10px;color:var(--text-hint)">mag</span>';
+    q('cdM').innerHTML  = Meff.toFixed(3)+' <span style="font-size:10px;color:var(--text-hint)">mag</span>';
+    q('cdL').innerHTML  = Lratio.toFixed(1)+' <span style="font-size:10px;color:var(--text-hint)">%</span>';
+    const st=q('cdSt');
+    if(k<0.05){ st.textContent='유지됨'; st.style.color=FE; }
+    else if(k<0.5){ st.textContent='부분 붕괴'; st.style.color=NI; }
+    else { st.textContent='붕괴 (나이 의존)'; st.style.color=CO; }
+    mChart.data.datasets[1].data = zArr.map(z=>Mzk(z,k));
+    mChart.update('none');
+  }
+  return { update };
+})();
+
+
+/* ═══════════════════════════════════════════════════
+   통합 k 슬라이더 → 네 파트 동기화
+   ═══════════════════════════════════════════════════ */
+const slider = document.getElementById('kSlider');
+
+function updateAll(){
+  const k = parseFloat(slider.value);
+  document.getElementById('kDisplay').textContent = 'k = ' + k.toFixed(2);
+  const cmbH0 = CMBInfer.H0ofK(k);
+  const baoH0 = BAOInfer.H0ofK(k);
+  HubbleGauge.update(k, cmbH0, baoH0);   // Part Ⅱ
+  StandardCandle.update(k);              // Part Ⅰ
+  CosmoModel.update(k);                  // Part Ⅲ·Ⅳ
+}
+
+slider.addEventListener('input', updateAll);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(()=>updateAll());
+else setTimeout(()=>updateAll(), 200);
+updateAll();
+
+// 모바일: 레이아웃이 자리잡은 뒤 그래프 크기 재조정 (겹침/찌그러짐 방지)
+// Chart.js responsive 모드와 게이지 ResizeObserver가 resize 이벤트에 반응함
+function kickResize(){
+  window.dispatchEvent(new Event('resize'));
+}
+// 모바일 레이아웃이 늦게 자리잡는 경우까지 대비해 여러 번 재조정
+['load','DOMContentLoaded'].forEach(ev=>
+  window.addEventListener(ev, ()=>{ [80,300,700,1400].forEach(t=>setTimeout(kickResize,t)); })
+);
+window.addEventListener('orientationchange', ()=>[150,500].forEach(t=>setTimeout(kickResize,t)));
+</script>
+</body>
+</html>
